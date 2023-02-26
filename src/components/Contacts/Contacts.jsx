@@ -22,3 +22,5 @@ const Contacts = ({ contacts, onDeleteBtnClick }) => (
 );
 
 export default Contacts;
+
+

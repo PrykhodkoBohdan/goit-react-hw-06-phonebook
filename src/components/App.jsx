@@ -1,74 +1,55 @@
-import { useState, useEffect } from 'react';
+
+import { useSelector, useDispatch } from 'react-redux';
+import { addContact, deleteContact } from 'redux/contacts/contacts-slice'; 
+import { getFilterContacts } from 'redux/contacts/contacts-selector';
+import { getFilter } from 'redux/filter/filter-selector'; 
+import { setFilter } from 'redux/filter/filter-slice'; 
+
 import Form from './Form/Form';
 import Section from './Section/Sextion';
 import Contacts from './Contacts/Contacts';
 import Filter from './Filter/Filter';
-import { v4 as uuidv4 } from 'uuid';
 
 const App = () => {
+  const dispatch = useDispatch();
+  const contacts = useSelector((state) => state.contacts);
+  const filteredContacts = useSelector(getFilterContacts);
+  const filter = useSelector(getFilter);
 
-  const [contact, setContact] = useState(() => {
-    const contact = JSON.parse(localStorage.getItem('my-contacts'));
-    return contact ? contact : [];
-  });
+  const handleFormSubmit = ({ name, number }) => {
+    const isContactExists = contacts.some(
+      (contact) => contact.name === name
+    );
 
-  const [filter, setFilter] = useState('');
-
-  useEffect(() => {
-    localStorage.setItem('my-contacts', JSON.stringify(contact));
-  }, [contact]);
-
-  const formSubmitHandler = data => {
-    const isContactValid = validateContact(data, contact);
-
-    if (isContactValid) {
-      data.id = uuidv4();
-      setContact(contact => {
-        return [data, ...contact];
-      });
+    if (isContactExists) {
+      console.log('Contact already exists');
+      return;
     }
-   
+
+    dispatch(addContact({ name, number }));
   };
 
-  const validateContact = (data, contact) => {
-        if (contact.some(({ name }) => name === data.name)) {
-          alert(`${data.name} is already in contacts or number`);
-          return false;
-        } else return true;
-      };
-
-  const deleteContact = id => {
-    setContact(prevContact => prevContact.filter(item => item.id !== id));
+  const handleDeleteContact = (id) => {
+    dispatch(deleteContact(id));
   };
-  const handleSearch = ({ target }) => setFilter(target.value);
-
-  const  getFiltredContacts = () => {
-
-      if (!filter) {
-        return contact;
-      }
-          const lowerCaseFilter = filter.toLowerCase();
-          return contact.filter(person =>
-            person.name.toLowerCase().includes(lowerCaseFilter),
-          );
-        }
 
   return (
     <>
       <Section title="Phonebook">
-        <Form onSubmit={formSubmitHandler} />
+        <Form onSubmit={handleFormSubmit} />
       </Section>
 
       <Section title="Contacts">
-        <Filter value={filter} onChange={handleSearch} />
+        <Filter value={filter} onChange={({ target }) => dispatch(setFilter(target.value))} />
         <Contacts
-          contacts={getFiltredContacts()}
-          onDeleteBtnClick={deleteContact}
+          contacts={filteredContacts}
+          onDeleteBtnClick={handleDeleteContact}
         />
       </Section>
     </>
   );
 };
+
 export default App;
 
 
